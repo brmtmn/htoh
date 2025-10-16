@@ -12,19 +12,28 @@ import (
 // cross-filesystem boundaries, fall back to copy semantics and leave the temp file removed.
 func SwapInPlaceCopy(srcPath, newPath string, noBackup bool) error {
 	if noBackup {
-		// Delete original without backup
-		if err := os.Remove(srcPath); err != nil {
-			return fmt.Errorf("remove original file failed: %w", err)
+		// For safety, rename original to temp name first, then delete only after successful replacement
+		tmpBackup := srcPath + ".tmp_delete"
+		if err := os.Rename(srcPath, tmpBackup); err != nil {
+			return fmt.Errorf("rename original to temp failed: %w", err)
 		}
+
 		// Try to rename (move) the new file to the original path
 		if err := os.Rename(newPath, srcPath); err == nil {
+			// Success - now safe to delete the temp backup
+			_ = os.Remove(tmpBackup)
 			return nil
 		}
+
 		// If rename fails (cross-filesystem), copy instead
 		if err := copyFileContents(newPath, srcPath); err != nil {
+			// Restore original on failure
+			_ = os.Rename(tmpBackup, srcPath)
 			return fmt.Errorf("copy new -> original path failed: %w", err)
 		}
 		_ = os.Remove(newPath)
+		// Success - now safe to delete the temp backup
+		_ = os.Remove(tmpBackup)
 		return nil
 	}
 

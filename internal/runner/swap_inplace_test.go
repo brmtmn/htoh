@@ -56,6 +56,7 @@ func TestSwapInPlaceCopyNoBackup(t *testing.T) {
 	srcPath := filepath.Join(tmpDir, "original.txt")
 	newPath := filepath.Join(tmpDir, "new.txt")
 	backupPath := srcPath + ".original"
+	tmpBackupPath := srcPath + ".tmp_delete"
 
 	// Create test files
 	if err := os.WriteFile(srcPath, []byte("original content"), 0644); err != nil {
@@ -73,6 +74,11 @@ func TestSwapInPlaceCopyNoBackup(t *testing.T) {
 	// Verify backup does NOT exist
 	if _, err := os.Stat(backupPath); !os.IsNotExist(err) {
 		t.Error("Backup file should not exist when noBackup=true")
+	}
+
+	// Verify temp backup is also cleaned up
+	if _, err := os.Stat(tmpBackupPath); !os.IsNotExist(err) {
+		t.Error("Temporary backup file should have been cleaned up")
 	}
 
 	// Verify original path has new content

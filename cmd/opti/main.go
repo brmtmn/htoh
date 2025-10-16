@@ -53,6 +53,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: -s <source> -w <workdir> [options]")
 		os.Exit(2)
 	}
+	if *noBackup && !*swapInplace {
+		fmt.Fprintln(os.Stderr, "opti: --no-backup requires --swap-inplace")
+		os.Exit(2)
+	}
 	if *workers <= 0 {
 		*workers = 1
 	}
