@@ -28,7 +28,9 @@ func SwapInPlaceCopy(srcPath, newPath string, noBackup bool) error {
 		// If rename fails (cross-filesystem), copy instead
 		if err := copyFileContents(newPath, srcPath); err != nil {
 			// Restore original on failure
-			_ = os.Rename(tmpBackup, srcPath)
+			if restoreErr := os.Rename(tmpBackup, srcPath); restoreErr != nil {
+				return fmt.Errorf("copy new -> original path failed: %w (WARNING: failed to restore original: %v)", err, restoreErr)
+			}
 			return fmt.Errorf("copy new -> original path failed: %w", err)
 		}
 		_ = os.Remove(newPath)
