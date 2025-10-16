@@ -8,9 +8,38 @@ import (
 )
 
 // SwapInPlaceCopy moves the freshly transcoded file back to the source location,
-// renaming the original file to *.original as a backup. If the rename fails due to
+// optionally renaming the original file to *.original as a backup. If the rename fails due to
 // cross-filesystem boundaries, fall back to copy semantics and leave the temp file removed.
-func SwapInPlaceCopy(srcPath, newPath string) error {
+func SwapInPlaceCopy(srcPath, newPath string, noBackup bool) error {
+	if noBackup {
+		// For safety, rename original to temp name first, then delete only after successful replacement
+		tmpBackup := srcPath + ".tmp_delete"
+		if err := os.Rename(srcPath, tmpBackup); err != nil {
+			return fmt.Errorf("rename original to temp failed: %w", err)
+		}
+
+		// Try to rename (move) the new file to the original path
+		if err := os.Rename(newPath, srcPath); err == nil {
+			// Success - now safe to delete the temp backup
+			_ = os.Remove(tmpBackup)
+			return nil
+		}
+
+		// If rename fails (cross-filesystem), copy instead
+		if err := copyFileContents(newPath, srcPath); err != nil {
+			// Restore original on failure
+			if restoreErr := os.Rename(tmpBackup, srcPath); restoreErr != nil {
+				return fmt.Errorf("copy new -> original path failed: %w (WARNING: failed to restore original: %v)", err, restoreErr)
+			}
+			return fmt.Errorf("copy new -> original path failed: %w", err)
+		}
+		_ = os.Remove(newPath)
+		// Success - now safe to delete the temp backup
+		_ = os.Remove(tmpBackup)
+		return nil
+	}
+
+	// Original behavior: create backup
 	origBackup := srcPath + ".original"
 	if err := os.Rename(srcPath, origBackup); err != nil {
 		return fmt.Errorf("rename original -> .original failed: %w", err)

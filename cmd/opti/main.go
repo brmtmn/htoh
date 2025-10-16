@@ -32,6 +32,7 @@ const Version = "0.3.3"
 
 func main() {
 	swapInplace := flag.Bool("swap-inplace", false, "After a successful transcode, rename the source to <name.ext>.original and copy the new file back to the original path (same name/ext).")
+	noBackup := flag.Bool("no-backup", false, "When used with --swap-inplace, do not create a .original backup of the source file (CAUTION: original file will be deleted).")
 	flag.Parse()
 	if *version {
 		fmt.Println("opti", Version)
@@ -50,6 +51,10 @@ func main() {
 	}
 	if *sourceDir == "" || *workDir == "" {
 		fmt.Fprintln(os.Stderr, "usage: -s <source> -w <workdir> [options]")
+		os.Exit(2)
+	}
+	if *noBackup && !*swapInplace {
+		fmt.Fprintln(os.Stderr, "opti: --no-backup requires --swap-inplace")
 		os.Exit(2)
 	}
 	if *workers <= 0 {
@@ -77,6 +82,7 @@ func main() {
 		FaststartMP4: *faststartMP4,
 		FastMode:     *fastMode,
 		SwapInplace:  *swapInplace,
+		NoBackup:     *noBackup,
 	}
 	if err := runner.Run(context.Background(), cfg); err != nil {
 		fmt.Fprintln(os.Stderr, "opti:", err)
