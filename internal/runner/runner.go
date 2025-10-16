@@ -32,6 +32,7 @@ type Config struct {
 	FaststartMP4 bool
 	FastMode     bool
 	SwapInplace  bool
+	NoBackup     bool
 }
 
 type qualityChoice struct {
@@ -470,7 +471,7 @@ func transcode(ctx context.Context, cfg Config, jb job, workerID int, prog *Prog
 		return waitErr
 	}
 	if cfg.SwapInplace {
-		if err := SwapInPlaceCopy(jb.Src, jb.OutTarget); err != nil {
+		if err := SwapInPlaceCopy(jb.Src, jb.OutTarget, cfg.NoBackup); err != nil {
 			return err
 		}
 	}

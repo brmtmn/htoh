@@ -9,7 +9,7 @@
 - Persistent state file (`.hevc_state.tsv` in the work directory) to allow resuming after interruptions.
 - Optional interactive confirmation and a silent mode for unattended runs.
 - Quick inspection flag (`-list-hw`) to surface HEVC-capable hardware accelerators and encoders that `ffmpeg` detects on the host.
-- `--swap-inplace` mode that safely replaces the source with the transcoded output while keeping a `.original` backup.
+- `--swap-inplace` mode that safely replaces the source with the transcoded output while keeping a `.original` backup (can be disabled with `--no-backup`).
 - Optional debug logging (`-debug`) to trace discovery/probing, custom `ffprobe` path selection, and MP4 container/`+faststart` controls for streaming-friendly outputs.
 - A `-fast` switch that biases the adaptive quality table one step toward smaller files when you need extra savings.
 - Adaptive quality heuristics that inspect the source bitrate, resolution, and frame rate to pick per-engine quality targets (CRF / ICQ / CQ), tuned to aim for roughly a 50 % size reduction while biasing toward safe visual quality.
@@ -159,6 +159,7 @@ opti -s <source-dir> -w <work-dir> [options]
 | `-faststart-mp4` | Keep MP4 sources in MP4 (instead of MKV) and add `-movflags +faststart`; other inputs still land in MKV. | `false` |
 | `-fast` | Shift the quality heuristics one notch toward smaller files across all engines. | `false` |
 | `--swap-inplace` | After a successful encode, rename the source to `<name>.original` and move the output back to the original location. | `false` |
+| `--no-backup` | When used with `--swap-inplace`, do not create a `.original` backup of the source file. **CAUTION:** The original file will be permanently deleted. | `false` |
 | `-version` | Print version information and exit. | `false` |
 
 ### What happens during a run
@@ -185,6 +186,11 @@ opti -s ~/Videos/raw -w ~/Videos/opti-work -j 4 -S
 ### Confirm before running and replace sources in place
 ```bash
 opti -s /srv/nas/series -w /srv/nas/opti-temp -I --swap-inplace
+```
+
+### Replace sources in place without keeping backups (CAUTION)
+```bash
+opti -s /srv/nas/series -w /srv/nas/opti-temp --swap-inplace --no-backup
 ```
 
 ### Use Intel Quick Sync with a custom ffmpeg build
